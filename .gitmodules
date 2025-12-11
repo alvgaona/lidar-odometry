@@ -1,0 +1,6 @@
+[submodule "Livox-SDK2"]
+	path = Livox-SDK2
+	url = https://github.com/alvgaona/Livox-SDK2.git
+[submodule "livox_ros_driver2"]
+	path = livox_ros_driver2
+	url = https://github.com/alvgaona/livox_ros_driver2.git
