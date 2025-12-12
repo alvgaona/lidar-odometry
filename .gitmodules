@@ -4,3 +4,6 @@
 [submodule "livox_ros_driver2"]
 	path = livox_ros_driver2
 	url = https://github.com/alvgaona/livox_ros_driver2.git
+[submodule "kiss-icp"]
+	path = kiss-icp
+	url = https://github.com/alvgaona/kiss-icp.git
