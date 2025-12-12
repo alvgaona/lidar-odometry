@@ -2,15 +2,24 @@
 authors = ["Alvaro Gaona <alvgaona@gmail.com>"]
 channels = ["conda-forge", "robostack-jazzy"]
 name = "lidar-odometry"
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
 version = "0.1.0"
 
 [tasks]
+clean = "rm -rf build/ install/ log/"
+build-pkg = "sh -c 'colcon build --packages-up-to \"$0\" --symlink-install --event-handlers console_direct+ --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=\"-Wall\" -DPython3_EXECUTABLE=$(which python) -DPython_EXECUTABLE=$(which python)'"
+test-pkg = "sh -c 'colcon test --packages-up-to \"$0\" --event-handlers console_direct+'"
+build-livox-sdk = "cmake -G Ninja -B Livox-SDK2/build -S Livox-SDK2 -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX && cmake --build Livox-SDK2/build && cmake --install Livox-SDK2/build"
 
 [dependencies]
 ros-jazzy-desktop = ">=0.11.0,<0.12"
 ros-jazzy-ament-cmake-auto = ">=2.5.4,<3"
-compilers = ">=1.11.0,<2"
 pkg-config = ">=0.29.2,<0.30"
 cmake = ">=4.2.1,<5"
 ninja = ">=1.13.2,<2"
+colcon-common-extensions = ">=0.3.0,<0.4"
+ros-jazzy-foxglove-bridge = ">=0.8.5,<0.9"
+ros-jazzy-foxglove-msgs = ">=3.1.0,<4"
+
+[activation]
+scripts = ["install/setup.bash"]
