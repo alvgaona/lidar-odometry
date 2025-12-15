@@ -10,3 +10,7 @@ log/
 
 # macOS
 .DS_Store
+
+# Datasets
+data/
+dataset*/
