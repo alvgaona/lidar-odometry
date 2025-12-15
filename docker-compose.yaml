@@ -1,0 +1,28 @@
+services:
+  soar-maze:
+    image: alvgaona/ros:jazzy-desktop-vnc
+    container_name: lidar-odometry
+    hostname: lidarodom-dev
+    environment:
+      - HOST_UID=${HOST_UID:-501}
+      - HOST_GID=${HOST_GID:-20}
+      - VNC_ENABLE=1
+      - VNC_RESOLUTION=1920x1080
+      - VNC_DEPTH=24
+      - ROS_DOMAIN_ID=0
+      - ROS_LOCALHOST_ONLY=0
+      - DISPLAY=:1
+    ports:
+      - "5901:5901" # VNC server
+    volumes:
+      - ./:/home/jazzy/lidarodom_ws
+    command: bash -c 'while true; do sleep 1000; done'
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
