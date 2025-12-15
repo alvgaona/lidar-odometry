@@ -7,6 +7,7 @@ version = "0.1.0"
 
 [tasks]
 clean = "rm -rf build/ install/ log/"
+build = "sh -c 'colcon build --symlink-install --event-handlers console_direct+ --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=\"-Wall\" -DPython3_EXECUTABLE=$(which python) -DPython_EXECUTABLE=$(which python)'"
 build-pkg = "sh -c 'colcon build --packages-up-to \"$0\" --symlink-install --event-handlers console_direct+ --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=\"-Wall\" -DPython3_EXECUTABLE=$(which python) -DPython_EXECUTABLE=$(which python)'"
 test-pkg = "sh -c 'colcon test --packages-up-to \"$0\" --event-handlers console_direct+'"
 build-livox-sdk = "cmake -G Ninja -B Livox-SDK2/build -S Livox-SDK2 -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX && cmake --build Livox-SDK2/build && cmake --install Livox-SDK2/build"
