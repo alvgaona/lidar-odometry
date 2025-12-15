@@ -15,6 +15,7 @@ def generate_launch_description():
     rviz = LaunchConfiguration('rviz')
     publish_freq = LaunchConfiguration('publish_freq')
     frame_id = LaunchConfiguration('frame_id')
+    lvx_config_file = LaunchConfiguration('lvx_config_file')
 
     # Launch arguments
     declare_foxglove_arg = DeclareLaunchArgument(
@@ -43,6 +44,12 @@ def generate_launch_description():
         description='Frame ID for the LiDAR data'
     )
 
+    declare_lvx_config_file_arg = DeclareLaunchArgument(
+        'lvx_config_file',
+        default_value=PathJoinSubstitution([pkg_share, 'config', 'MID360_config.json']),
+        description='Path to Livox .json configuration file'
+    )
+
     # Livox driver node
     livox_driver = Node(
         package='livox_ros_driver2',
@@ -52,11 +59,11 @@ def generate_launch_description():
         parameters=[{
             'xfer_format': 0,  # 0-Pointcloud2(PointXYZRTL), 1-customized pointcloud format
             'multi_topic': 0,  # 0-All LiDARs share the same topic, 1-One LiDAR one topic
-            'data_src': 0,  # 0-lidar, others-Invalid data src
+            'data_src': 0,     # 0-lidar, others-Invalid data src
             'publish_freq': publish_freq,
             'output_data_type': 0,
             'frame_id': frame_id,
-            'user_config_path': PathJoinSubstitution([pkg_share, 'config', 'MID360_config.json']),
+            'user_config_path': PathJoinSubstitution([pkg_share, 'config', lvx_config_file]),
         }]
     )
 
@@ -77,12 +84,11 @@ def generate_launch_description():
     )
 
     # RViz node
-    rviz_config = PathJoinSubstitution([pkg_share, 'config', 'livox_pointcloud.rviz'])
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
         name='rviz2',
-        arguments=['-d', rviz_config],
+        arguments=['-d', PathJoinSubstitution([pkg_share, 'config', 'livox_pointcloud.rviz'])],
         condition=IfCondition(rviz),
         output='screen'
     )
@@ -92,10 +98,9 @@ def generate_launch_description():
         declare_rviz_arg,
         declare_publish_freq_arg,
         declare_frame_id_arg,
+        declare_lvx_config_file_arg,
         static_tf,
         livox_driver,
         foxglove_bridge,
         rviz_node,
     ])
-
-
