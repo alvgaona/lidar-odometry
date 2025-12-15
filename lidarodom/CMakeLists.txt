@@ -1,23 +1,35 @@
 cmake_minimum_required(VERSION 3.10)
 project(lidarodom)
 
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Development)
 
-add_executable(lidarodom src/lidarodom.cpp)
-target_include_directories(lidarodom PUBLIC
+add_executable(message_converter src/message_converter.cpp)
+target_include_directories(message_converter PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
-target_compile_features(lidarodom PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(message_converter
+  rclcpp
+  nav_msgs
+  geometry_msgs
+)
+target_link_libraries(message_converter Python3::Python)
 
-install(TARGETS lidarodom
+install(TARGETS message_converter
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files
