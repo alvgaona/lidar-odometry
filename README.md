@@ -65,3 +65,42 @@ pixi run build-pkg <package_name>
 
 > [!IMPORTANT]
 > To build `livox_ros_driver2`, the `Livox-SDK2` must be compiled and installed first; running `pixi run build-livox-sdk`.
+
+## Usage
+
+Once all is installed, there are a few launch files that can be easily used to visualize some results.
+
+> [!NOTE]
+> These examples will be conducted using Pixi but it is the same using using system-wide ROS 2.
+
+Once, you connect your LiDAR to the host machine via the UTP RJ45 cable, just look for the interface in your sysstem, and change its IP address to
+192.168.1.50. A simple test is to ping 192.168.1.130 which is the LiDAR.
+
+```text
+ping 192.168.1.130
+PING 192.168.1.130 (192.168.1.130): 56 data bytes
+64 bytes from 192.168.1.130: icmp_seq=0 ttl=255 time=2.336 ms
+64 bytes from 192.168.1.130: icmp_seq=1 ttl=255 time=1.842 ms
+```
+
+After that, just run this to visualize the point cloud in RViz.
+The nodes will take a few seconds to start up and you should see the point cloud in real-time.
+
+```sh
+pixi run ros2 launch lidarodom livox.launch.py
+```
+
+Then, you'd like to run some LiDAR odometry algorithm, there's this other launch file.
+
+```sh
+pixi run ros2 launch lidarodom odometry.launch.py topic:=/livox/points
+```
+
+> [!IMPORTANT]
+> There's a custom node called `message_converter` that publishes on `/kiss/pose` and `/kiss/path`
+> to add more visualization features in RViz.
+
+### Foxglove
+
+Additionally, the `livox.launch.py` launch file has a `foxglove` parameter to spin up the Foxglove bridge to visualize the topics in Foxglove.
+It's a bit different but recommended to visualize ROS 2 data.
