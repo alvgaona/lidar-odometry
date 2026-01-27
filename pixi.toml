@@ -7,6 +7,7 @@ version = "0.1.0"
 
 [tasks]
 clean = "rm -rf build/ install/ log/"
+clean-pkg = "sh -c 'rm -rf build/\"$0\" install/\"$0\"'"
 build = "sh -c 'colcon build --symlink-install --event-handlers console_direct+ --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=\"-Wall\" -DPython3_EXECUTABLE=$(which python) -DPython_EXECUTABLE=$(which python)'"
 build-pkg = "sh -c 'colcon build --packages-up-to \"$0\" --symlink-install --event-handlers console_direct+ --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS=\"-Wall\" -DPython3_EXECUTABLE=$(which python) -DPython_EXECUTABLE=$(which python)'"
 test-pkg = "sh -c 'colcon test --packages-up-to \"$0\" --event-handlers console_direct+'"
