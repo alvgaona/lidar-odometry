@@ -13,14 +13,14 @@
   // subsample_rate                 : Subsampling rate for loop detection (Only used when subsample_target < 0)
   // gicp_max_correspondence_dist   : Maximum correspondence distance for GICP
   // vgicp_voxel_resolution         : Voxel resolution for VGICP
-  // 
+  //
   // --- Factor settings ---
   // odom_factor_stddev             : Standard deviation for odometry factor
   // loop_factor_stddev             : Standard deviation for loop factor
   // loop_factor_robust_width       : Robust kernel width for loop factor
   // loop_candidate_buffer_size     : Buffer size for loop candidates
   // loop_candidate_eval_per_thread : Number of loop candidate evaluation per thread and per cycle
-  // 
+  //
   // --- Optimizer settings (see https://gtsam.org/doxygen/4.0.0/a03679.html) ---
   // use_isam2_dogleg               : If true, use dogleg optimizer (robust but slow)
   // isam2_relinearize_skip         : Relinearization is performed every $isam2_relinearize_skip optimization calls
@@ -35,7 +35,7 @@
     "init_pose_damping_scale": 1e6,
     // Loop detection settings
     "registration_type": "VGICP",
-    "min_travel_dist": 50.0,
+    "min_travel_dist": 5.0,
     "max_neighbor_dist": 5.0,
     "min_inliear_fraction": 0.5,
     "subsample_target": 10000,
