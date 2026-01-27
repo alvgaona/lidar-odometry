@@ -7,3 +7,15 @@
 [submodule "kiss-icp"]
 	path = kiss-icp
 	url = https://github.com/alvgaona/kiss-icp.git
+[submodule "gtsam"]
+	path = gtsam
+	url = https://github.com/alvgaona/gtsam.git
+[submodule "gtsam_points"]
+	path = gtsam_points
+	url = https://github.com/alvgaona/gtsam_points.git
+[submodule "glim"]
+	path = glim
+	url = https://github.com/alvgaona/glim.git
+[submodule "glim_ros2"]
+	path = glim_ros2
+	url = https://github.com/alvgaona/glim_ros2.git
