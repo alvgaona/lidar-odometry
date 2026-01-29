@@ -89,7 +89,7 @@ struct ParamEntry {
 template <typename T>
 class ParamBuilder {
 public:
-    ParamBuilder(Params& params, const std::string& name);
+    explicit ParamBuilder(const std::string& name) : name_(name) {}
 
     ParamBuilder& value(const T& default_val) {
         default_value_ = default_val;
@@ -119,7 +119,6 @@ public:
 private:
     friend class Params;
 
-    Params& params_;
     std::string name_;
     std::optional<T> default_value_;
     std::string help_;
@@ -127,7 +126,7 @@ private:
     std::optional<double> range_max_;
     std::optional<std::vector<std::string>> choices_;
 
-    void finalize();
+    void finalize(Params& params);
 };
 
 class Params {
@@ -140,8 +139,8 @@ public:
 
     template <typename T>
     ParamBuilder<T>& bind(const std::string& name) {
-        auto builder = std::make_shared<ParamBuilder<T>>(*this, name);
-        pending_builders_.push_back([b = builder]() { b->finalize(); });
+        auto builder = std::make_shared<ParamBuilder<T>>(name);
+        pending_builders_.push_back([b = builder](Params& p) { b->finalize(p); });
         builder_storage_.push_back(builder);
         return *builder;
     }
@@ -159,7 +158,7 @@ public:
         node_ = node;
 
         for (auto& finalize_fn : pending_builders_) {
-            finalize_fn();
+            finalize_fn(*this);
         }
         pending_builders_.clear();
 
@@ -276,12 +275,12 @@ private:
     rclcpp::Node* node_;
     mutable std::vector<detail::ParamEntry> entries_;
     std::unordered_map<std::string, std::any> values_;
-    mutable std::vector<std::function<void()>> pending_builders_;
+    mutable std::vector<std::function<void(Params&)>> pending_builders_;
     std::vector<std::shared_ptr<void>> builder_storage_;
 
     void finalize_if_needed() const {
         for (auto& finalize_fn : pending_builders_) {
-            finalize_fn();
+            finalize_fn(const_cast<Params&>(*this));
         }
         pending_builders_.clear();
     }
@@ -404,13 +403,9 @@ private:
 };
 
 template <typename T>
-ParamBuilder<T>::ParamBuilder(Params& params, const std::string& name)
-    : params_(params), name_(name) {}
-
-template <typename T>
-void ParamBuilder<T>::finalize() {
-    params_.register_param<T>(name_, default_value_, help_,
-                               range_min_, range_max_, choices_);
+void ParamBuilder<T>::finalize(Params& params) {
+    params.register_param<T>(name_, default_value_, help_,
+                              range_min_, range_max_, choices_);
 }
 
 }  // namespace lidarodom
