@@ -1,13 +1,13 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 
 
 def generate_launch_description():
-    kiss_icp_package_share = FindPackageShare(package="kiss_icp")
     lidarodom_package_share = FindPackageShare(package="lidarodom")
 
     # Declare launch arguments
@@ -28,7 +28,7 @@ def generate_launch_description():
     declare_visualize_arg = DeclareLaunchArgument(
         "visualize",
         default_value="true",
-        description="Enable visualization"
+        description="Enable debug cloud visualization"
     )
     declare_base_frame_arg = DeclareLaunchArgument(
         "base_frame",
@@ -50,6 +50,16 @@ def generate_launch_description():
         default_value="false",
         description="Invert odometry transform"
     )
+    declare_position_covariance_arg = DeclareLaunchArgument(
+        "position_covariance",
+        default_value="0.1",
+        description="Position covariance for odometry"
+    )
+    declare_orientation_covariance_arg = DeclareLaunchArgument(
+        "orientation_covariance",
+        default_value="0.1",
+        description="Orientation covariance for odometry"
+    )
     declare_config_file_arg = DeclareLaunchArgument(
         "config_file",
         default_value=PathJoinSubstitution([lidarodom_package_share, "config", "kiss_icp.yaml"]),
@@ -70,6 +80,11 @@ def generate_launch_description():
         default_value="false",
         description="Launch RViz visualization"
     )
+    declare_foxglove_arg = DeclareLaunchArgument(
+        "foxglove",
+        default_value="false",
+        description="Launch Foxglove bridge"
+    )
 
     # Launch configurations
     bag_file = LaunchConfiguration("bag_file")
@@ -80,28 +95,34 @@ def generate_launch_description():
     lidar_odom_frame = LaunchConfiguration("lidar_odom_frame")
     publish_odom_tf = LaunchConfiguration("publish_odom_tf")
     invert_odom_tf = LaunchConfiguration("invert_odom_tf")
+    position_covariance = LaunchConfiguration("position_covariance")
+    orientation_covariance = LaunchConfiguration("orientation_covariance")
     config_file = LaunchConfiguration("config_file")
     bag_rate = LaunchConfiguration("bag_rate")
     bag_start = LaunchConfiguration("bag_start")
     rviz = LaunchConfiguration("rviz")
+    foxglove = LaunchConfiguration("foxglove")
 
-    # Include KISS-ICP odometry launch file
-    kiss_icp_odometry = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution([kiss_icp_package_share, "launch", "odometry.launch.py"])
-        ),
-        launch_arguments={
-            "topic": topic,
-            "use_sim_time": use_sim_time,
-            "visualize": visualize,
-            "base_frame": base_frame,
-            "lidar_odom_frame": lidar_odom_frame,
-            "publish_odom_tf": publish_odom_tf,
-            "invert_odom_tf": invert_odom_tf,
-            "config_file": config_file,
-            "rviz_config": PathJoinSubstitution([lidarodom_package_share, "config", "kiss_icp.rviz"]),
-            "rviz": rviz,
-        }.items()
+    # KISS-ICP odometry node
+    kiss_icp_node = Node(
+        package="kiss_icp",
+        executable="kiss_icp_node",
+        name="kiss_icp_node",
+        output="screen",
+        remappings=[("pointcloud_topic", topic)],
+        parameters=[
+            {
+                "base_frame": base_frame,
+                "lidar_odom_frame": lidar_odom_frame,
+                "publish_odom_tf": publish_odom_tf,
+                "invert_odom_tf": invert_odom_tf,
+                "publish_debug_clouds": visualize,
+                "position_covariance": position_covariance,
+                "orientation_covariance": orientation_covariance,
+                "use_sim_time": use_sim_time,
+            },
+            config_file,
+        ],
     )
 
     # Message converter node
@@ -111,6 +132,26 @@ def generate_launch_description():
         name="message_converter",
         output="screen",
         parameters=[{"use_sim_time": use_sim_time}],
+    )
+
+    # RViz node (optional)
+    rviz_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        arguments=["-d", PathJoinSubstitution([lidarodom_package_share, "config", "kiss_icp.rviz"])],
+        parameters=[{"use_sim_time": use_sim_time}],
+        condition=IfCondition(rviz),
+        output="screen",
+    )
+
+    # Foxglove bridge (optional)
+    foxglove_bridge_pkg = FindPackageShare("foxglove_bridge")
+    foxglove_bridge = IncludeLaunchDescription(
+        XMLLaunchDescriptionSource(
+            PathJoinSubstitution([foxglove_bridge_pkg, "launch", "foxglove_bridge_launch.xml"])
+        ),
+        condition=IfCondition(foxglove),
     )
 
     # Rosbag playback
@@ -134,11 +175,16 @@ def generate_launch_description():
         declare_lidar_odom_frame_arg,
         declare_publish_odom_tf_arg,
         declare_invert_odom_tf_arg,
+        declare_position_covariance_arg,
+        declare_orientation_covariance_arg,
         declare_config_file_arg,
         declare_bag_rate_arg,
         declare_bag_start_arg,
         declare_rviz_arg,
-        kiss_icp_odometry,
+        declare_foxglove_arg,
+        kiss_icp_node,
         message_converter,
+        rviz_node,
+        foxglove_bridge,
         rosbag_play,
     ])
