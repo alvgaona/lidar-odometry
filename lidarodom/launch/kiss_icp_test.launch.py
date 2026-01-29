@@ -40,9 +40,19 @@ def generate_launch_description():
         default_value="odom_lidar",
         description="Lidar odometry frame"
     )
+    declare_publish_odom_tf_arg = DeclareLaunchArgument(
+        "publish_odom_tf",
+        default_value="true",
+        description="Publish odometry transform"
+    )
+    declare_invert_odom_tf_arg = DeclareLaunchArgument(
+        "invert_odom_tf",
+        default_value="false",
+        description="Invert odometry transform"
+    )
     declare_config_file_arg = DeclareLaunchArgument(
         "config_file",
-        default_value="config.yaml",
+        default_value=PathJoinSubstitution([lidarodom_package_share, "config", "kiss_icp.yaml"]),
         description="KISS-ICP configuration file"
     )
     declare_bag_rate_arg = DeclareLaunchArgument(
@@ -55,6 +65,11 @@ def generate_launch_description():
         default_value="0.0",
         description="Start time offset in seconds"
     )
+    declare_rviz_arg = DeclareLaunchArgument(
+        "rviz",
+        default_value="false",
+        description="Launch RViz visualization"
+    )
 
     # Launch configurations
     bag_file = LaunchConfiguration("bag_file")
@@ -63,9 +78,12 @@ def generate_launch_description():
     visualize = LaunchConfiguration("visualize")
     base_frame = LaunchConfiguration("base_frame")
     lidar_odom_frame = LaunchConfiguration("lidar_odom_frame")
+    publish_odom_tf = LaunchConfiguration("publish_odom_tf")
+    invert_odom_tf = LaunchConfiguration("invert_odom_tf")
     config_file = LaunchConfiguration("config_file")
     bag_rate = LaunchConfiguration("bag_rate")
     bag_start = LaunchConfiguration("bag_start")
+    rviz = LaunchConfiguration("rviz")
 
     # Include KISS-ICP odometry launch file
     kiss_icp_odometry = IncludeLaunchDescription(
@@ -78,7 +96,11 @@ def generate_launch_description():
             "visualize": visualize,
             "base_frame": base_frame,
             "lidar_odom_frame": lidar_odom_frame,
+            "publish_odom_tf": publish_odom_tf,
+            "invert_odom_tf": invert_odom_tf,
             "config_file": config_file,
+            "rviz_config": PathJoinSubstitution([lidarodom_package_share, "config", "kiss_icp.rviz"]),
+            "rviz": rviz,
         }.items()
     )
 
@@ -88,16 +110,7 @@ def generate_launch_description():
         executable="message_converter",
         name="message_converter",
         output="screen",
-    )
-
-    # RViz node
-    rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        arguments=["-d", PathJoinSubstitution([lidarodom_package_share, "config", "kiss_icp.rviz"])],
         parameters=[{"use_sim_time": use_sim_time}],
-        output="screen"
     )
 
     # Rosbag playback
@@ -119,11 +132,13 @@ def generate_launch_description():
         declare_visualize_arg,
         declare_base_frame_arg,
         declare_lidar_odom_frame_arg,
+        declare_publish_odom_tf_arg,
+        declare_invert_odom_tf_arg,
         declare_config_file_arg,
         declare_bag_rate_arg,
         declare_bag_start_arg,
+        declare_rviz_arg,
         kiss_icp_odometry,
         message_converter,
-        rviz_node,
         rosbag_play,
     ])

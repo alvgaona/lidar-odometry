@@ -19,7 +19,7 @@ def generate_launch_description():
     lvx_lidar_topic = LaunchConfiguration('lvx_lidar_topic')
     lvx_imu_topic = LaunchConfiguration('lvx_imu_topic')
 
-    
+
     # Launch arguments
     declare_foxglove_arg = DeclareLaunchArgument(
         'foxglove',
@@ -90,7 +90,7 @@ def generate_launch_description():
     static_tf = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'livox_frame']
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
     )
 
     # Foxglove Bridge
