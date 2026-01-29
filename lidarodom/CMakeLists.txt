@@ -16,6 +16,8 @@ find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(mocap4r2_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Development)
 
 add_executable(message_converter src/message_converter.cpp)
@@ -26,6 +28,8 @@ ament_target_dependencies(message_converter
   rclcpp
   nav_msgs
   geometry_msgs
+  mocap4r2_msgs
+  tf2_ros
 )
 target_link_libraries(message_converter Python3::Python)
 
