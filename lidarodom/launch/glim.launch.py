@@ -1,9 +1,10 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -23,8 +24,15 @@ def generate_launch_description():
         description="Path to rosbag file (optional)",
     )
 
+    declare_foxglove_arg = DeclareLaunchArgument(
+        "foxglove",
+        default_value="false",
+        description="Launch Foxglove bridge",
+    )
+
     config_path = LaunchConfiguration("config_path")
     rosbag = LaunchConfiguration("rosbag")
+    foxglove = LaunchConfiguration("foxglove")
 
     rosbag_provided = PythonExpression(["'", rosbag, "' != ''"])
 
@@ -47,9 +55,19 @@ def generate_launch_description():
         condition=IfCondition(rosbag_provided),
     )
 
+    foxglove_bridge_pkg = FindPackageShare("foxglove_bridge")
+    foxglove_bridge = IncludeLaunchDescription(
+        XMLLaunchDescriptionSource(
+            PathJoinSubstitution([foxglove_bridge_pkg, "launch", "foxglove_bridge_launch.xml"])
+        ),
+        condition=IfCondition(foxglove),
+    )
+
     return LaunchDescription([
         declare_config_path_arg,
         declare_rosbag_arg,
+        declare_foxglove_arg,
         glim_node,
         glim_rosbag_node,
+        foxglove_bridge,
     ])
