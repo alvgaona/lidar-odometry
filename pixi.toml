@@ -26,6 +26,9 @@ cmake = ">=4.2.1,<5"
 ninja = ">=1.13.2,<2"
 colcon-common-extensions = ">=0.3.0,<0.4"
 eigen = ">=3.4.0,<4"
+evo = ">=1.34.2,<2"
+qt-main = ">=5.15.15,<6"
+pyqt = ">=5.15.11,<6"
 
 [feature.humble]
 channels = ["robostack-humble"]
@@ -54,3 +57,6 @@ default = ["humble"]
 
 [activation]
 scripts = ["install/setup.bash"]
+
+[pypi-dependencies]
+pyqt6 = ">=6.7.1, <7"
