@@ -20,11 +20,6 @@ def generate_launch_description():
         default_value="/livox/lidar",
         description="Pointcloud topic name"
     )
-    declare_use_sim_time_arg = DeclareLaunchArgument(
-        "use_sim_time",
-        default_value="true",
-        description="Use simulation time"
-    )
     declare_visualize_arg = DeclareLaunchArgument(
         "visualize",
         default_value="true",
@@ -88,7 +83,6 @@ def generate_launch_description():
 
     # Launch configurations
     bag_file = LaunchConfiguration("bag_file")
-    use_sim_time = LaunchConfiguration("use_sim_time")
     topic = LaunchConfiguration("topic")
     visualize = LaunchConfiguration("visualize")
     base_frame = LaunchConfiguration("base_frame")
@@ -119,7 +113,6 @@ def generate_launch_description():
                 "publish_debug_clouds": visualize,
                 "position_covariance": position_covariance,
                 "orientation_covariance": orientation_covariance,
-                "use_sim_time": use_sim_time,
             },
             config_file,
         ],
@@ -131,7 +124,6 @@ def generate_launch_description():
         executable="message_converter",
         name="message_converter",
         output="screen",
-        parameters=[{"use_sim_time": use_sim_time}],
     )
 
     # RViz node (optional)
@@ -140,7 +132,6 @@ def generate_launch_description():
         executable="rviz2",
         name="rviz2",
         arguments=["-d", PathJoinSubstitution([lidarodom_package_share, "config", "kiss_icp.rviz"])],
-        parameters=[{"use_sim_time": use_sim_time}],
         condition=IfCondition(rviz),
         output="screen",
     )
@@ -159,17 +150,15 @@ def generate_launch_description():
         cmd=[
             "ros2", "bag", "play", "-s", "mcap",
             bag_file,
-            "--clock",
             "--rate", bag_rate,
             "--start-offset", bag_start
         ],
-        output="screen"
+        output="screen",
     )
 
     return LaunchDescription([
         declare_bag_file_arg,
         declare_topic_arg,
-        declare_use_sim_time_arg,
         declare_visualize_arg,
         declare_base_frame_arg,
         declare_lidar_odom_frame_arg,
