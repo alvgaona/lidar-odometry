@@ -10,6 +10,7 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <builtin_interfaces/msg/time.hpp>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2/LinearMath/Transform.h>
 #include <lidarodom/params.hpp>
 #include <memory>
 
@@ -36,7 +37,18 @@ private:
 
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     geometry_msgs::msg::TransformStamped map_to_odom_transform_;
-    bool transform_initialized_ = false;
+
+    // Alignment transform: odom_pose * mocap_pose.inverse()
+    // Transforms mocap poses into odom_lidar frame
+    tf2::Transform align_transform_;
+    bool alignment_initialized_ = false;
+
+    // Buffer for latest mocap pose (used to compute alignment when first odom arrives)
+    geometry_msgs::msg::Pose latest_mocap_pose_;
+    bool mocap_received_ = false;
+
+    // Transform mocap pose to odom_lidar frame
+    geometry_msgs::msg::Pose transform_to_odom_frame(const geometry_msgs::msg::Pose& mocap_pose);
 
     rclcpp::TimerBase::SharedPtr tf_timer_;
 

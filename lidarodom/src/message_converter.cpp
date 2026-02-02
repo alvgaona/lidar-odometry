@@ -3,6 +3,7 @@
 #include <mocap4r2_msgs/mocap4r2_msgs/msg/rigid_bodies.hpp>
 #include <mocap4r2_msgs/msg/detail/rigid_bodies__struct.hpp>
 #include <nav_msgs/msg/detail/path__struct.hpp>
+#include <tf2/LinearMath/Quaternion.h>
 
 MessageConverter::MessageConverter(lidarodom::Params params)
     : Node("message_converter"),
@@ -33,7 +34,9 @@ MessageConverter::MessageConverter(lidarodom::Params params)
         10,
         [this](const mocap4r2_msgs::msg::RigidBodies::SharedPtr msg) {
             auto pose = this->publish_rigid_bodies_pose(msg);
-            this->publish_rigid_bodies_path(pose);
+            if (alignment_initialized_) {
+                this->publish_rigid_bodies_path(pose);
+            }
         }
     );
 
@@ -68,9 +71,9 @@ MessageConverter::MessageConverter(lidarodom::Params params)
     RCLCPP_INFO(this->get_logger(), "  - /lidarodom/ground_truth/pose");
     RCLCPP_INFO(this->get_logger(), "  - /lidarodom/ground_truth/path");
 
-    // Initialize path frame_id
+    // Initialize path frame_id (both use odom frame)
     path_msg_->header.frame_id = odom_frame;
-    ground_truth_path_msg_->header.frame_id = map_frame;
+    ground_truth_path_msg_->header.frame_id = odom_frame;
 
     map_to_odom_transform_.header.frame_id = map_frame;
     map_to_odom_transform_.child_frame_id = odom_frame;
@@ -95,22 +98,50 @@ MessageConverter::MessageConverter(lidarodom::Params params)
 void MessageConverter::publish_rigid_bodies_path(const geometry_msgs::msg::PoseStamped pose) {
     ground_truth_path_msg_->poses.push_back(pose);
     ground_truth_path_msg_->header = pose.header;
-
     ground_truth_path_publisher_->publish(*ground_truth_path_msg_);
-};
+}
+
+geometry_msgs::msg::Pose MessageConverter::transform_to_odom_frame(const geometry_msgs::msg::Pose& mocap_pose) {
+    tf2::Transform mocap_tf;
+    mocap_tf.setOrigin(tf2::Vector3(
+        mocap_pose.position.x, mocap_pose.position.y, mocap_pose.position.z));
+    mocap_tf.setRotation(tf2::Quaternion(
+        mocap_pose.orientation.x, mocap_pose.orientation.y,
+        mocap_pose.orientation.z, mocap_pose.orientation.w));
+
+    // Apply alignment: aligned_pose = align_transform * mocap_pose
+    tf2::Transform aligned_tf = align_transform_ * mocap_tf;
+
+    geometry_msgs::msg::Pose aligned_pose;
+    aligned_pose.position.x = aligned_tf.getOrigin().x();
+    aligned_pose.position.y = aligned_tf.getOrigin().y();
+    aligned_pose.position.z = aligned_tf.getOrigin().z();
+    aligned_pose.orientation.x = aligned_tf.getRotation().x();
+    aligned_pose.orientation.y = aligned_tf.getRotation().y();
+    aligned_pose.orientation.z = aligned_tf.getRotation().z();
+    aligned_pose.orientation.w = aligned_tf.getRotation().w();
+
+    return aligned_pose;
+}
 
 geometry_msgs::msg::PoseStamped MessageConverter::publish_rigid_bodies_pose(const mocap4r2_msgs::msg::RigidBodies::SharedPtr msg) {
     auto pose_stamped = geometry_msgs::msg::PoseStamped();
-    pose_stamped.pose = msg->rigidbodies.at(params_.get<int>("rigid_body_index")).pose;
-    pose_stamped.header = msg->header;
+    const auto& raw_pose = msg->rigidbodies.at(params_.get<int>("rigid_body_index")).pose;
 
-    if (!transform_initialized_) {
-        map_to_odom_transform_.transform.translation.x = pose_stamped.pose.position.x;
-        map_to_odom_transform_.transform.translation.y = pose_stamped.pose.position.y;
-        map_to_odom_transform_.transform.translation.z = pose_stamped.pose.position.z;
-        map_to_odom_transform_.transform.rotation = pose_stamped.pose.orientation;
-        transform_initialized_ = true;
+    // Store latest mocap pose for alignment computation
+    latest_mocap_pose_ = raw_pose;
+    mocap_received_ = true;
+
+    // Don't publish until alignment is initialized (waiting for first odom)
+    if (!alignment_initialized_) {
+        return pose_stamped;
     }
+
+    pose_stamped.header.stamp = this->now();
+    pose_stamped.header.frame_id = params_.get<std::string>("odom_frame");
+
+    // Transform mocap pose to odom_lidar frame
+    pose_stamped.pose = transform_to_odom_frame(raw_pose);
 
     ground_truth_pose_publisher_->publish(pose_stamped);
 
@@ -123,13 +154,53 @@ void MessageConverter::publish_map_to_odom_transform(const builtin_interfaces::m
 }
 
 void MessageConverter::publish_pose_and_path(const nav_msgs::msg::Odometry::SharedPtr msg) {
+    // Initialize alignment on first odometry message
+    if (!alignment_initialized_ && mocap_received_) {
+        // Get odometry pose
+        tf2::Transform odom_tf;
+        odom_tf.setOrigin(tf2::Vector3(
+            msg->pose.pose.position.x,
+            msg->pose.pose.position.y,
+            msg->pose.pose.position.z));
+        odom_tf.setRotation(tf2::Quaternion(
+            msg->pose.pose.orientation.x,
+            msg->pose.pose.orientation.y,
+            msg->pose.pose.orientation.z,
+            msg->pose.pose.orientation.w));
+
+        // Get mocap pose at this moment
+        tf2::Transform mocap_tf;
+        mocap_tf.setOrigin(tf2::Vector3(
+            latest_mocap_pose_.position.x,
+            latest_mocap_pose_.position.y,
+            latest_mocap_pose_.position.z));
+        mocap_tf.setRotation(tf2::Quaternion(
+            latest_mocap_pose_.orientation.x,
+            latest_mocap_pose_.orientation.y,
+            latest_mocap_pose_.orientation.z,
+            latest_mocap_pose_.orientation.w));
+
+        // Compute alignment: align_transform = odom_pose * mocap_pose.inverse()
+        align_transform_ = odom_tf * mocap_tf.inverse();
+
+        // Update TF transform (map -> odom)
+        map_to_odom_transform_.transform.translation.x = latest_mocap_pose_.position.x;
+        map_to_odom_transform_.transform.translation.y = latest_mocap_pose_.position.y;
+        map_to_odom_transform_.transform.translation.z = latest_mocap_pose_.position.z;
+        map_to_odom_transform_.transform.rotation = latest_mocap_pose_.orientation;
+
+        alignment_initialized_ = true;
+        RCLCPP_INFO(this->get_logger(), "Alignment initialized: mocap -> odom_lidar");
+    }
+
     auto pose_stamped = geometry_msgs::msg::PoseStamped();
-    pose_stamped.header = msg->header;
+    pose_stamped.header.stamp = this->now();
+    pose_stamped.header.frame_id = msg->header.frame_id;
     pose_stamped.pose = msg->pose.pose;
     pose_publisher_->publish(pose_stamped);
 
     path_msg_->poses.push_back(pose_stamped);
-    path_msg_->header.stamp = msg->header.stamp;
+    path_msg_->header.stamp = this->now();
     path_msg_->header.frame_id = msg->header.frame_id;
     path_publisher_->publish(*path_msg_);
 }
