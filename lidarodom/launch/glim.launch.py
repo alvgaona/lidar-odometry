@@ -8,8 +8,10 @@ from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 
 
 def generate_launch_description():
+    lidarodom_package_share = FindPackageShare(package="lidarodom")
+
     default_config_path = PathJoinSubstitution([
-        FindPackageShare("lidarodom"), "config", "glim"
+        lidarodom_package_share, "config", "glim"
     ])
 
     declare_config_path_arg = DeclareLaunchArgument(
@@ -30,12 +32,6 @@ def generate_launch_description():
         description="Playback rate for rosbag",
     )
 
-    declare_foxglove_arg = DeclareLaunchArgument(
-        "foxglove",
-        default_value="true",
-        description="Launch Foxglove bridge",
-    )
-
     declare_pose_topic_arg = DeclareLaunchArgument(
         "pose_topic",
         default_value="/glim_ros_node/pose",
@@ -48,12 +44,18 @@ def generate_launch_description():
         description="Odometry frame ID",
     )
 
+    declare_rviz_arg = DeclareLaunchArgument(
+        "rviz",
+        default_value="false",
+        description="Launch RViz visualization",
+    )
+
     config_path = LaunchConfiguration("config_path")
     bag_file = LaunchConfiguration("bag_file")
     bag_rate = LaunchConfiguration("bag_rate")
-    foxglove = LaunchConfiguration("foxglove")
     pose_topic = LaunchConfiguration("pose_topic")
     odom_frame = LaunchConfiguration("odom_frame")
+    rviz = LaunchConfiguration("rviz")
 
     bag_provided = PythonExpression(["'", bag_file, "' != ''"])
 
@@ -79,15 +81,6 @@ def generate_launch_description():
         condition=IfCondition(bag_provided),
     )
 
-    foxglove_bridge_pkg = FindPackageShare("foxglove_bridge")
-    foxglove_bridge = IncludeLaunchDescription(
-        XMLLaunchDescriptionSource(
-            PathJoinSubstitution([foxglove_bridge_pkg, "launch", "foxglove_bridge_launch.xml"])
-        ),
-        launch_arguments={"use_sim_time": bag_provided}.items(),
-        condition=IfCondition(foxglove),
-    )
-
     glim_converter = Node(
         package="lidarodom",
         executable="glim_converter",
@@ -100,15 +93,25 @@ def generate_launch_description():
         }],
     )
 
+    rviz_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        arguments=["-d", PathJoinSubstitution([lidarodom_package_share, "config", "glim.rviz"])],
+        parameters=[{"use_sim_time": bag_provided}],
+        condition=IfCondition(rviz),
+        output="screen",
+    )
+
     return LaunchDescription([
         declare_config_path_arg,
         declare_bag_file_arg,
         declare_bag_rate_arg,
-        declare_foxglove_arg,
         declare_pose_topic_arg,
         declare_odom_frame_arg,
+        declare_rviz_arg,
         glim_node,
         rosbag_play,
-        foxglove_bridge,
         glim_converter,
+        rviz_node,
     ])
