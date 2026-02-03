@@ -11,6 +11,9 @@ clean-pkg = "sh -c 'rm -rf build/\"$0\" install/\"$0\"'"
 build = "sh -c 'colcon build --symlink-install --event-handlers console_direct+ --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_FLAGS=\"-Wall\" -DPython3_EXECUTABLE=$(which python) -DPython_EXECUTABLE=$(which python)'"
 build-pkg = "sh -c 'colcon build --packages-up-to \"$0\" --symlink-install --event-handlers console_direct+ --cmake-args -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_FLAGS=\"-Wall\" -DPython3_EXECUTABLE=$(which python) -DPython_EXECUTABLE=$(which python)'"
 test-pkg = "sh -c 'colcon test --packages-up-to \"$0\" --event-handlers console_direct+'"
+evo-traj = { cmd = "sh -c 'evo_traj bag2 \"$0\" /glim_ros_node/odom --ref /lidarodom/ground_truth/pose --plot -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
+evo-ape = { cmd = "sh -c 'evo_ape bag2 \"$0\" /lidarodom/ground_truth/pose /lidarodom/pose -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
+evo-rpe = { cmd = "sh -c 'evo_rpe bag2 \"$0\" /lidarodom/ground_truth/pose /lidarodom/pose -a'", env = { QT_QPA_PLATFORM_PLUGIN_PATH = "$CONDA_PREFIX/lib/python3.11/site-packages/PyQt6/Qt6/plugins/platforms" } }
 
 # Direct launch commands
 livox = "ros2 launch lidarodom livox.launch.py"
