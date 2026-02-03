@@ -33,7 +33,20 @@ ament_target_dependencies(message_converter
 )
 target_link_libraries(message_converter Python3::Python)
 
-install(TARGETS message_converter
+add_executable(glim_converter src/glim_converter.cpp)
+target_include_directories(glim_converter PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+ament_target_dependencies(glim_converter
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  mocap4r2_msgs
+  tf2_ros
+)
+target_link_libraries(glim_converter Python3::Python)
+
+install(TARGETS message_converter glim_converter
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files
