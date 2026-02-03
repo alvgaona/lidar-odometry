@@ -118,12 +118,15 @@ def generate_launch_description():
         ],
     )
 
-    # Message converter node
-    message_converter = Node(
+    kiss_converter = Node(
         package="lidarodom",
-        executable="message_converter",
-        name="message_converter",
+        executable="kiss_converter",
+        name="kiss_converter",
         output="screen",
+        parameters=[{
+            "odom_topic": "/kiss/odometry",
+            "odom_frame": lidar_odom_frame,
+        }],
     )
 
     # RViz node (optional)
@@ -172,7 +175,7 @@ def generate_launch_description():
         declare_rviz_arg,
         declare_foxglove_arg,
         kiss_icp_node,
-        message_converter,
+        kiss_converter,
         rviz_node,
         foxglove_bridge,
         rosbag_play,

@@ -15,10 +15,10 @@
 #include <memory>
 
 
-class MessageConverter final : public rclcpp::Node {
+class KissConverter final : public rclcpp::Node {
 public:
-    explicit MessageConverter(lidarodom::Params params);
-    ~MessageConverter() override = default;
+    explicit KissConverter(lidarodom::Params params);
+    ~KissConverter() override = default;
 
 private:
     lidarodom::Params params_;

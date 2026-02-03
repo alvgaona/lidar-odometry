@@ -1,12 +1,12 @@
-#include "lidarodom/message_converter.hpp"
+#include "lidarodom/kiss_converter.hpp"
 #include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
 #include <mocap4r2_msgs/mocap4r2_msgs/msg/rigid_bodies.hpp>
 #include <mocap4r2_msgs/msg/detail/rigid_bodies__struct.hpp>
 #include <nav_msgs/msg/detail/path__struct.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 
-MessageConverter::MessageConverter(lidarodom::Params params)
-    : Node("message_converter"),
+KissConverter::KissConverter(lidarodom::Params params)
+    : Node("kiss_converter"),
       params_(std::move(params)),
       path_msg_(std::make_unique<nav_msgs::msg::Path>()),
       ground_truth_path_msg_(std::make_unique<nav_msgs::msg::Path>()),
@@ -95,13 +95,13 @@ MessageConverter::MessageConverter(lidarodom::Params params)
     );
 }
 
-void MessageConverter::publish_rigid_bodies_path(const geometry_msgs::msg::PoseStamped pose) {
+void KissConverter::publish_rigid_bodies_path(const geometry_msgs::msg::PoseStamped pose) {
     ground_truth_path_msg_->poses.push_back(pose);
     ground_truth_path_msg_->header = pose.header;
     ground_truth_path_publisher_->publish(*ground_truth_path_msg_);
 }
 
-geometry_msgs::msg::Pose MessageConverter::transform_to_odom_frame(const geometry_msgs::msg::Pose& mocap_pose) {
+geometry_msgs::msg::Pose KissConverter::transform_to_odom_frame(const geometry_msgs::msg::Pose& mocap_pose) {
     tf2::Transform mocap_tf;
     mocap_tf.setOrigin(tf2::Vector3(
         mocap_pose.position.x, mocap_pose.position.y, mocap_pose.position.z));
@@ -124,7 +124,7 @@ geometry_msgs::msg::Pose MessageConverter::transform_to_odom_frame(const geometr
     return aligned_pose;
 }
 
-geometry_msgs::msg::PoseStamped MessageConverter::publish_rigid_bodies_pose(const mocap4r2_msgs::msg::RigidBodies::SharedPtr msg) {
+geometry_msgs::msg::PoseStamped KissConverter::publish_rigid_bodies_pose(const mocap4r2_msgs::msg::RigidBodies::SharedPtr msg) {
     auto pose_stamped = geometry_msgs::msg::PoseStamped();
     const auto& raw_pose = msg->rigidbodies.at(params_.get<int>("rigid_body_index")).pose;
 
@@ -148,12 +148,12 @@ geometry_msgs::msg::PoseStamped MessageConverter::publish_rigid_bodies_pose(cons
     return pose_stamped;
 }
 
-void MessageConverter::publish_map_to_odom_transform(const builtin_interfaces::msg::Time& stamp) {
+void KissConverter::publish_map_to_odom_transform(const builtin_interfaces::msg::Time& stamp) {
     map_to_odom_transform_.header.stamp = stamp;
     tf_broadcaster_->sendTransform(map_to_odom_transform_);
 }
 
-void MessageConverter::publish_pose_and_path(const nav_msgs::msg::Odometry::SharedPtr msg) {
+void KissConverter::publish_pose_and_path(const nav_msgs::msg::Odometry::SharedPtr msg) {
     // Initialize alignment on first odometry message
     if (!alignment_initialized_ && mocap_received_) {
         // Get odometry pose
@@ -235,12 +235,12 @@ int main(int argc, char** argv) {
         .range(1.0, 1000.0);
 
     if (lidarodom::Params::has_help_flag(argc, argv)) {
-        params.print_help("Convert mocap and odometry messages", "lidarodom", "message_converter");
+        params.print_help("Convert mocap and odometry messages", "lidarodom", "kiss_converter");
         return 0;
     }
 
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<MessageConverter>(std::move(params));
+    auto node = std::make_shared<KissConverter>(std::move(params));
 
     try {
         rclcpp::spin(node);

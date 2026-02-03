@@ -20,18 +20,18 @@ find_package(mocap4r2_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS Development)
 
-add_executable(message_converter src/message_converter.cpp)
-target_include_directories(message_converter PUBLIC
+add_executable(kiss_converter src/kiss_converter.cpp)
+target_include_directories(kiss_converter PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
-ament_target_dependencies(message_converter
+ament_target_dependencies(kiss_converter
   rclcpp
   nav_msgs
   geometry_msgs
   mocap4r2_msgs
   tf2_ros
 )
-target_link_libraries(message_converter Python3::Python)
+target_link_libraries(kiss_converter Python3::Python)
 
 add_executable(glim_converter src/glim_converter.cpp)
 target_include_directories(glim_converter PUBLIC
@@ -46,7 +46,7 @@ ament_target_dependencies(glim_converter
 )
 target_link_libraries(glim_converter Python3::Python)
 
-install(TARGETS message_converter glim_converter
+install(TARGETS kiss_converter glim_converter
   DESTINATION lib/${PROJECT_NAME})
 
 # Install launch files
