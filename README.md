@@ -27,7 +27,7 @@ pixi run ros2 launch lidarodom kiss_icp.launch.py bag_file:=/path/to/bag
 
 ## Livox Setup
 
-Set host IP to `192.168.1.50`, LiDAR is at `192.168.1.130`.
+Set host IP to `192.168.10.50`, LiDAR is at `192.168.10.130`.
 
 ## Alternative: APT Installation
 
