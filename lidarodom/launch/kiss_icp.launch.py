@@ -1,10 +1,9 @@
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
-from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 
 
 def generate_launch_description():
@@ -75,11 +74,6 @@ def generate_launch_description():
         default_value="false",
         description="Launch RViz visualization"
     )
-    declare_foxglove_arg = DeclareLaunchArgument(
-        "foxglove",
-        default_value="false",
-        description="Launch Foxglove bridge"
-    )
 
     # Launch configurations
     bag_file = LaunchConfiguration("bag_file")
@@ -95,7 +89,6 @@ def generate_launch_description():
     bag_rate = LaunchConfiguration("bag_rate")
     bag_start = LaunchConfiguration("bag_start")
     rviz = LaunchConfiguration("rviz")
-    foxglove = LaunchConfiguration("foxglove")
 
     # KISS-ICP odometry node
     kiss_icp_node = Node(
@@ -139,15 +132,6 @@ def generate_launch_description():
         output="screen",
     )
 
-    # Foxglove bridge (optional)
-    foxglove_bridge_pkg = FindPackageShare("foxglove_bridge")
-    foxglove_bridge = IncludeLaunchDescription(
-        XMLLaunchDescriptionSource(
-            PathJoinSubstitution([foxglove_bridge_pkg, "launch", "foxglove_bridge_launch.xml"])
-        ),
-        condition=IfCondition(foxglove),
-    )
-
     # Rosbag playback
     rosbag_play = ExecuteProcess(
         cmd=[
@@ -157,6 +141,7 @@ def generate_launch_description():
             "--start-offset", bag_start
         ],
         output="screen",
+        condition=IfCondition(bag_file),
     )
 
     return LaunchDescription([
@@ -173,10 +158,8 @@ def generate_launch_description():
         declare_bag_rate_arg,
         declare_bag_start_arg,
         declare_rviz_arg,
-        declare_foxglove_arg,
         kiss_icp_node,
         kiss_converter,
         rviz_node,
-        foxglove_bridge,
         rosbag_play,
     ])
