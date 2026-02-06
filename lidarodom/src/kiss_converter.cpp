@@ -1,6 +1,6 @@
 #include "lidarodom/kiss_converter.hpp"
 #include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
-#include <mocap4r2_msgs/mocap4r2_msgs/msg/rigid_bodies.hpp>
+#include <mocap4r2_msgs/msg/rigid_bodies.hpp>
 #include <mocap4r2_msgs/msg/detail/rigid_bodies__struct.hpp>
 #include <nav_msgs/msg/detail/path__struct.hpp>
 #include <tf2/LinearMath/Quaternion.h>
