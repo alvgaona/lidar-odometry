@@ -1,0 +1,47 @@
+# Default topic configuration for rerun_bridge
+# This file can be loaded via ros2 launch parameter file
+
+rerun_bridge:
+  ros__parameters:
+    recording_name: "lidar_odometry"
+    connection_mode: "spawn"  # Options: spawn, connect, save
+    connect_address: "rerun+http://127.0.0.1:9876/proxy"
+    entity_prefix: "/world"
+
+    # Point cloud topics
+    pointcloud_topics:
+      - "/livox/lidar"
+      - "/kiss/frame"
+      - "/kiss/local_map"
+    pointcloud_entities:
+      - "/lidar/raw"
+      - "/kiss/frame"
+      - "/kiss/map"
+
+    # Odometry topics
+    odometry_topics:
+      - "/kiss/odometry"
+    odometry_entities:
+      - "/kiss/odom"
+
+    # Path topics
+    path_topics:
+      - "/lidarodom/path"
+      - "/lidarodom/ground_truth/path"
+    path_entities:
+      - "/odom/trajectory"
+      - "/ground_truth/trajectory"
+
+    # IMU topics
+    imu_topics:
+      - "/livox/imu"
+    imu_entities:
+      - "/imu"
+
+    # Pose topics (optional)
+    pose_topics: []
+    pose_entities: []
+
+    # TF frames to track (optional)
+    tf_parent_frames: []
+    tf_child_frames: []

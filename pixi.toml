@@ -29,6 +29,8 @@ eigen = ">=3.4.0,<4"
 evo = ">=1.34.2,<2"
 qt-main = ">=5.15.15,<6"
 pyqt = ">=5.15.11,<6"
+librerun-sdk = ">=0.28.2"
+rerun-sdk = ">=0.28.2"
 
 [feature.humble]
 channels = ["robostack-humble"]
