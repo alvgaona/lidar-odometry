@@ -1,44 +1,36 @@
 #include "lidarodom/glim_converter.hpp"
 
-GlimConverter::GlimConverter(lidarodom::Params params)
+GlimConverter::GlimConverter()
     : Node("glim_converter", rclcpp::NodeOptions().parameter_overrides({{"use_sim_time", true}})),
-      params_(std::move(params)),
       path_msg_(std::make_unique<nav_msgs::msg::Path>()) {
 
-    params_.parse(this);
+    pose_topic_ = this->declare_parameter<std::string>("pose_topic", "/glim_rosbag/pose");
+    mocap_topic_ = this->declare_parameter<std::string>("mocap_topic", "/mocap/rigid_bodies");
+    odom_frame_ = this->declare_parameter<std::string>("odom_frame", "odom");
+    rigid_body_index_ = this->declare_parameter<int>("rigid_body_index", 1);
 
-    auto pose_topic = params_.get<std::string>("pose_topic");
-    auto mocap_topic = params_.get<std::string>("mocap_topic");
-    odom_frame_ = params_.get<std::string>("odom_frame");
-
-    if (odom_frame_.empty()) {
-        odom_frame_ = "odom";
-    }
-
-    // Subscribers
     pose_subscriber_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-        pose_topic, 10,
+        pose_topic_, 10,
         [this](const geometry_msgs::msg::PoseStamped::SharedPtr msg) { on_pose(msg); }
     );
 
     mocap_subscriber_ = this->create_subscription<mocap4r2_msgs::msg::RigidBodies>(
-        mocap_topic, 10,
+        mocap_topic_, 10,
         [this](const mocap4r2_msgs::msg::RigidBodies::SharedPtr msg) { on_mocap(msg); }
     );
 
     RCLCPP_INFO(this->get_logger(), "Subscribers:");
-    RCLCPP_INFO(this->get_logger(), "  - %s (pose)", pose_topic.c_str());
-    RCLCPP_INFO(this->get_logger(), "  - %s (mocap)", mocap_topic.c_str());
+    RCLCPP_INFO(this->get_logger(), "  - %s (pose)", pose_topic_.c_str());
+    RCLCPP_INFO(this->get_logger(), "  - %s (mocap)", mocap_topic_.c_str());
 
-    // Publishers
     path_publisher_ = this->create_publisher<nav_msgs::msg::Path>("/lidarodom/path", 10);
-    ground_truth_pose_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/lidarodom/ground_truth/pose", 10);
+    ground_truth_pose_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(
+        "/lidarodom/ground_truth/pose", 10);
 
     RCLCPP_INFO(this->get_logger(), "Publishers:");
     RCLCPP_INFO(this->get_logger(), "  - /lidarodom/path");
     RCLCPP_INFO(this->get_logger(), "  - /lidarodom/ground_truth/pose");
 
-    // Initialize path frame
     path_msg_->header.frame_id = odom_frame_;
 
     RCLCPP_INFO(this->get_logger(), "Odom frame: %s", odom_frame_.c_str());
@@ -55,54 +47,23 @@ void GlimConverter::on_pose(const geometry_msgs::msg::PoseStamped::SharedPtr msg
 }
 
 void GlimConverter::on_mocap(const mocap4r2_msgs::msg::RigidBodies::SharedPtr msg) {
-    auto rigid_body_index = params_.get<int>("rigid_body_index");
-    if (rigid_body_index >= static_cast<int>(msg->rigidbodies.size())) {
-        RCLCPP_WARN_ONCE(this->get_logger(), "Rigid body index %d out of range", rigid_body_index);
+    if (rigid_body_index_ >= static_cast<int>(msg->rigidbodies.size())) {
+        RCLCPP_WARN_ONCE(this->get_logger(), "Rigid body index %d out of range", rigid_body_index_);
         return;
     }
 
     geometry_msgs::msg::PoseStamped pose_stamped;
     pose_stamped.header.stamp = this->now();
     pose_stamped.header.frame_id = msg->header.frame_id;
-    pose_stamped.pose = msg->rigidbodies.at(rigid_body_index).pose;
+    pose_stamped.pose = msg->rigidbodies.at(rigid_body_index_).pose;
 
     ground_truth_pose_publisher_->publish(pose_stamped);
 }
 
 int main(int argc, char** argv) {
-    lidarodom::Params params;
-
-    params.bind<std::string>("pose_topic")
-        .value("/glim_rosbag/pose")
-        .help("Topic for GLIM pose input");
-
-    params.bind<std::string>("mocap_topic")
-        .value("/mocap/rigid_bodies")
-        .help("Topic for mocap rigid bodies input");
-
-    params.bind<std::string>("odom_frame")
-        .value("odom")
-        .help("Frame ID for odometry path");
-
-    params.bind<int>("rigid_body_index")
-        .value(1)
-        .help("Index of the rigid body to track")
-        .range(0, 100);
-
-    if (lidarodom::Params::has_help_flag(argc, argv)) {
-        params.print_help("Convert GLIM pose to path and republish mocap pose", "lidarodom", "glim_converter");
-        return 0;
-    }
-
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<GlimConverter>(std::move(params));
-
-    try {
-        rclcpp::spin(node);
-    } catch (const std::exception& e) {
-        RCLCPP_ERROR(node->get_logger(), "Exception: %s", e.what());
-    }
-
+    auto node = std::make_shared<GlimConverter>();
+    rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }
