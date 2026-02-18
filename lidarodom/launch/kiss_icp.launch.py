@@ -1,7 +1,7 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
@@ -12,6 +12,7 @@ def generate_launch_description():
     # Declare launch arguments
     declare_bag_file_arg = DeclareLaunchArgument(
         "bag_file",
+        default_value="",
         description="Path to MCAP rosbag file"
     )
     declare_topic_arg = DeclareLaunchArgument(
@@ -141,7 +142,7 @@ def generate_launch_description():
             "--start-offset", bag_start
         ],
         output="screen",
-        condition=IfCondition(bag_file),
+        condition=IfCondition(PythonExpression(["'", bag_file, "' != ''"])),
     )
 
     return LaunchDescription([
