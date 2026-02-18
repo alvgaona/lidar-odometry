@@ -50,9 +50,10 @@ channels = ["robostack-jazzy"]
 [feature.jazzy.dependencies]
 ros-jazzy-desktop = ">=0.11.0,<0.12"
 ros-jazzy-ament-cmake-auto = ">=2.5.4,<3"
-ros-jazzy-foxglove-bridge = ">=0.8.5,<0.9"
+ros-jazzy-foxglove-bridge = ">=3.2.2,<4"
 ros-jazzy-foxglove-msgs = ">=3.1.0,<4"
 ros-jazzy-rosbag2-storage-mcap = ">=0.26.7,<0.27"
+ros-jazzy-mocap4r2-msgs = ">=0.1.0,<0.2"
 
 [environments]
 jazzy = ["jazzy"]
